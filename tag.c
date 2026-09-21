@@ -2,7 +2,7 @@
 #include<string.h>
 #include"tag.h"
 
-void tag_filter(Tags_info *tags_info)
+void initialise_tag_filter(Tags_info *tags_info)
 {
     strcpy(tags_info->tags_array[0].tag, "TIT2");
     strcpy(tags_info->tags_array[1].tag, "TPE1");

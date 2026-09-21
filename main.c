@@ -7,5 +7,6 @@ int main()
 {
     Tags_info tags_info;
     File_data file_data;
+    initialise_tag_filter(&tags_info);
 
 }

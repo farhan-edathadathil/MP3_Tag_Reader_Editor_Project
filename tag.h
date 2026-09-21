@@ -14,7 +14,7 @@ typedef struct
     int tag_count;
 }Tags_info;
 
-void tag_filter(Tags_info *tags_info);
+void initialise_tag_filter(Tags_info *tags_info);
 void display_tags(Tags_info *tags_info);
 void find_tag();
 void print_tag();
