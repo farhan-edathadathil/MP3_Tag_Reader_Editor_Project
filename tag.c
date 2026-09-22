@@ -36,3 +36,8 @@ void print_tag()
 {
     //print each tag charcter by character by reading from file
 }
+
+void edit_tag()
+{
+    
+}
