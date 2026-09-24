@@ -19,15 +19,16 @@ int main()
         return 0;
     }
     initialise_tag_filter(&tags_info);
+    find_tag(&file_data, &tags_info);
     printf("\n***** MP3_TAG_READER & EDITOR *****\n");
     printf("--------------------------------------\n\n");
-    display_tags(&tags_info);
+    display_tags(&file_data,&tags_info);
     do
     {
         printf("\n***** MAIN MENU *****\n\n");
-        printf("1. READ & DISPLAY TAG\n");
-        printf("2. EDIT TAG\n");
-        printf("3. HELP");
+        printf("1. (v) VIEW TAG\n");
+        printf("2. (e) EDIT TAG\n");
+        printf("3. (h) HELP");
         printf("4. EXIT\n");
         printf("\nENTER THE CHOICE : ");
         scanf("%d",&choice);
@@ -35,11 +36,11 @@ int main()
         switch(choice)
         {
         case 1:
-            display_tags(&tags_info);
+            display_tags(&file_data,&tags_info);
             break;
         
         case 2:
-            edit_tag(&tags_info);
+            //edit_tag(&tags_info);
             break;
 
         case 3:

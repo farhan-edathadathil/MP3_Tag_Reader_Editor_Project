@@ -8,6 +8,7 @@ typedef struct
 {
     FILE *fptr;
     long unsigned int file_size;
+    int header_size;
     FILE *fedit;
 }File_data;
 

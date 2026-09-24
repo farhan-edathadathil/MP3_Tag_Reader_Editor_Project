@@ -1,6 +1,8 @@
 #include<stdio.h>
 #include<string.h>
+#include<stdlib.h>
 #include"file.h"
+#include"tag.h"
 
 int pre_open_check(char *file_name)
 {
@@ -20,7 +22,6 @@ int post_open_check(File_data *file_data)
     //read full header frame size and check it is less than (file size - 10)
 
     int temp;
-    char *str=&temp;
     file_data->fptr=fopen(FILE_NAME,"r");
     if(file_data->fptr==NULL)
     {
@@ -30,33 +31,56 @@ int post_open_check(File_data *file_data)
     fseek(file_data->fptr,0,SEEK_END);
     file_data->file_size=ftell(file_data->fptr);
     rewind(file_data->fptr);
+    char *buffer = malloc(file_data->file_size);
+    if (buffer == NULL)
+    {
+        printf("Memory allocation failed\n");
+        return 0;
+    }
     if((file_data->file_size)<10)
     {
         printf("\nFile is currupted!!\n\n");
         return 0;
     }
-    for(int i=0;i<3;i++)
-        fread(str+i,1,1,file_data->fptr);
-    str[3]='\0';
-    if(strcmp(str,"ID3"))
+    fread(buffer,1,3,file_data->fptr);
+    buffer[3]='\0';
+    if(strcmp(buffer,"ID3"))
     {
-        printf("\nUnsupported file header id!!!\n\n");
+        printf("\nUnsupported file header id !!\n\n");
         return 0;
     }
-    for(int i=0;i<2;i++)
-        fread(str+i,1,1,file_data->fptr);
-    if(str[0]!=3 || str[1]!=0)
+    fread(buffer,1,2,file_data->fptr);
+    if(buffer[0]!=3 || buffer[1]!=0)
     {
         printf("\nFile version is not supported !!\n\n");
         return 0;
     }
     fseek(file_data->fptr, 1, SEEK_CUR);
-    fread(&temp,4,1,file_data->fptr);
+    fread(buffer,1,4,file_data->fptr);
+    temp=((buffer[0]<<21) | (buffer[1]<<14) | (buffer[2]<<7) | buffer[3]);
     if(temp+10>(file_data->file_size))
     {
         printf("\nFile is currupted !!\n\n");
         return 0;
     }
+    file_data->header_size=temp+10;
+    
+    file_data->fedit=fopen("edit.mp3","w+");
+    rewind(file_data->fptr);
+    if(fread(buffer,1,file_data->file_size,file_data->fptr)!=file_data->file_size)
+    {
+        printf("reading failed");
+        return 0;
+    }
+    if(fwrite(buffer,1,file_data->file_size,file_data->fedit)!=file_data->file_size)
+    {
+        printf("writing failed");
+        return 0;
+    }
+    rewind(file_data->fedit);
+    fclose(file_data->fptr);
+    free(buffer);
+    buffer = NULL;
     return 1;
 }
 
