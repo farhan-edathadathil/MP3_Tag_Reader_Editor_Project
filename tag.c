@@ -141,3 +141,21 @@ void edit_tag()
 {
     
 }
+
+void print_help(void)
+{
+    printf("\n");
+    printf("Usage: mp3tag -[tTaAycg] \"value\" file1\n");
+    printf("       mp3tag -v\n");
+    printf("\n");
+
+    printf("-t    Modifies a Title tag\n");
+    printf("-T    Modifies a Track tag\n");
+    printf("-a    Modifies an Artist tag\n");
+    printf("-A    Modifies an Album tag\n");
+    printf("-y    Modifies a Year tag\n");
+    printf("-c    Modifies a Comment tag\n");
+    printf("-g    Modifies a Genre tag\n");
+    printf("-h    Displays this help info\n");
+    printf("-v    Prints version info\n");
+}

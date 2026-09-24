@@ -20,5 +20,6 @@ void display_tags(File_data *file_data,Tags_info *tags_info);
 void find_tag(File_data *file_data,Tags_info *tag_info);
 void print_tag(File_data *file_data,Tag *tag);
 void edit_tag();
+void print_help(void);
 
 #endif

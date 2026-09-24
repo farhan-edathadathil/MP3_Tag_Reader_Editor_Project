@@ -34,7 +34,7 @@ int post_open_check(File_data *file_data)
     char *buffer = malloc(file_data->file_size);
     if (buffer == NULL)
     {
-        printf("Memory allocation failed\n");
+        printf("Memory allocation of buffer failed\n");
         return 0;
     }
     if((file_data->file_size)<10)
@@ -80,7 +80,6 @@ int post_open_check(File_data *file_data)
     rewind(file_data->fedit);
     fclose(file_data->fptr);
     free(buffer);
-    buffer = NULL;
     return 1;
 }
 
