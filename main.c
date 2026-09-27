@@ -49,7 +49,10 @@ int main()
             break;
         
         case 'e':
-            //edit_tag(&tags_info);
+            if(edit_option(&file_data,&tags_info)==0)
+            {
+                printf("editing failed !!\n\n");
+            }
             break;
 
         case 'h':

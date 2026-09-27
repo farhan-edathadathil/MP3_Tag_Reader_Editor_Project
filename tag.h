@@ -19,7 +19,8 @@ void initialise_tag_filter(Tags_info *tags_info);
 void display_tags(File_data *file_data,Tags_info *tags_info);
 void find_tag(File_data *file_data,Tags_info *tag_info);
 void print_tag(File_data *file_data,Tag *tag);
-void edit_tag();
+int edit_option(File_data *file_data,Tags_info *tags_info);
+void edit_tag(File_data *file_data,Tag *tag);
 void print_help(void);
 
 #endif

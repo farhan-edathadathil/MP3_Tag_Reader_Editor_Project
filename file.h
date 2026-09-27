@@ -14,6 +14,8 @@ typedef struct
 
 int pre_open_check(char *file_name);
 int post_open_check(File_data *file_data);
+int open_file(File_data *file_data);
+int create_edit_file(File_data *file_data);
 void file_close(File_data *file_data);
 
 #endif
