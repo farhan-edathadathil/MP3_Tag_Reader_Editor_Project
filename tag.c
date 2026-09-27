@@ -213,6 +213,7 @@ void edit_tag(File_data *file_data,Tag *tag)
     tryagain:
     printf("\n%c%c%c%c -tag : ",tag->tag[0],tag->tag[1],tag->tag[2],tag->tag[3]);
     print_tag(file_data,tag);
+
     printf("\n\nConfirm this content wants to edit (y/n):");
     scanf("%c",&confirm);
     ch = getchar();
@@ -223,6 +224,7 @@ void edit_tag(File_data *file_data,Tag *tag)
         while ((ch = getchar()) != '\n' && ch != EOF);
         goto tryagain;
     }
+    
     char *buffer=malloc(count);
     if(confirm=='y')
     {
