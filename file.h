@@ -2,20 +2,17 @@
 #define FILE_H
 
 #include <stdio.h>
-#define FILE_NAME "sample.mp3"
+
 
 typedef struct
 {
     FILE *fptr;
     long unsigned int file_size;
-    int header_size;
-    FILE *fedit;
+    unsigned int header_size;
 }File_data;
 
 int pre_open_check(char *file_name);
 int post_open_check(File_data *file_data);
-int open_file(File_data *file_data);
-int create_edit_file(File_data *file_data);
-void file_close(File_data *file_data);
+int open_file(File_data *file_data,char *file_name);
 
 #endif

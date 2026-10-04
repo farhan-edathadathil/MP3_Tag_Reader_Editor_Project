@@ -22,19 +22,13 @@ int post_open_check(File_data *file_data)
     //read full header frame size and check it is less than (file size - 10)
 
     int temp;
-    file_data->fptr=fopen(FILE_NAME,"r");
-    if(file_data->fptr==NULL)
-    {
-        perror("File could not open : \n");
-        return 0;
-    }
+    char buffer[5];
     fseek(file_data->fptr,0,SEEK_END);
     file_data->file_size=ftell(file_data->fptr);
     rewind(file_data->fptr);
-    char buffer[5];
     if((file_data->file_size)<10)
     {
-        printf("\nFile is currupted!!\n\n");
+        printf("\nFile is currupted !!\n\n");
         return 0;
     }
     fread(buffer,1,3,file_data->fptr);
@@ -59,70 +53,17 @@ int post_open_check(File_data *file_data)
         return 0;
     }
     file_data->header_size=temp+10;
-    if(create_edit_file(file_data) == 0)
-        return 0;
-    // char *buffer1 = malloc(file_data->file_size);
-    // if (buffer1 == NULL)
-    // {
-    //     printf("Memory allocation of buffer failed\n");
-    //     return 0;
-    // }
-    // file_data->fedit=fopen("edit.mp3","w+");
-    // rewind(file_data->fptr);
-    // if(fread(buffer1,1,file_data->file_size,file_data->fptr)!=file_data->file_size)
-    // {
-    //     printf("reading failed");
-    //     return 0;
-    // }
-    // if(fwrite(buffer1,1,file_data->file_size,file_data->fedit)!=file_data->file_size)
-    // {
-    //     printf("writing failed");
-    //     return 0;
-    // }
-    // rewind(file_data->fedit);
-    // free(buffer1);
-    fclose(file_data->fptr);
     return 1;
 }
 
-int open_file(File_data *file_data)
+int open_file(File_data *file_data,char *file_name)
 {
-    file_data->fptr=fopen(FILE_NAME,"r");
+    file_data->fptr=fopen(file_name,"r");
     if(file_data->fptr==NULL)
     {
-        perror("File could not open : \n");
+        perror("\nFile could not open ");
+        printf("\n");
         return 0;
     }
     return 1;
-}
-
-int create_edit_file(File_data *file_data)
-{
-    char *buffer = malloc(file_data->file_size);
-    if (buffer == NULL)
-    {
-        printf("Memory allocation of buffer failed\n");
-        return 0;
-    }
-    file_data->fedit=fopen("edit.mp3","w+");
-    rewind(file_data->fptr);
-    if(fread(buffer,1,file_data->file_size,file_data->fptr)!=file_data->file_size)
-    {
-        printf("reading failed");
-        return 0;
-    }
-    if(fwrite(buffer,1,file_data->file_size,file_data->fedit)!=file_data->file_size)
-    {
-        printf("writing failed");
-        return 0;
-    }
-    rewind(file_data->fedit);
-    free(buffer);
-    return 1;
-}
-
-void file_close(File_data *file_data)
-{
-
-
 }
