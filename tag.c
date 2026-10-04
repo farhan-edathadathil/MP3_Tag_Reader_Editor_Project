@@ -98,7 +98,7 @@ void find_tags(File_data *file_data,Tags_info *tag_info)
     }
     if(tag_info->tag_count < 6)
     {
-        printf("\nBellow listed tags not found in header : \n");
+        printf("\nBelow listed tags not found in header : \n");
         for(int i=0;i<6;i++)
         {
             if(tag_info->tags_array[i].frame_pos==0)       
@@ -128,6 +128,11 @@ void print_tag(File_data *file_data,Tag *tag)
     else if(ch==0x00)
     {
         unsigned char *buffer=malloc(tag->frame_size);
+        if(buffer==NULL)
+        {
+            printf("Reading failed due to memory allocation failed !!");
+            return;
+        }
         fread(buffer,1,(tag->frame_size)-1,file_data->fptr);
         buffer[(tag->frame_size)-1]='\0';
         if(strcmp(tag->tag,"COMM")==0)
@@ -156,6 +161,11 @@ void print_tag01(File_data *file_data,Tag *tag)
 {
 
     unsigned char *buffer=malloc(tag->frame_size);
+    if(buffer==NULL)
+    {
+        printf("Reading failed due to memory allocation failed !!");
+        return;
+    }
     if(strcmp(tag->tag,"COMM")==0)
     {
         fread(buffer,1,(tag->frame_size)-1,file_data->fptr);
@@ -304,7 +314,7 @@ int find_a_tag(File_data *file_data,Tag *tag)
         size=((((unsigned int) temp[0])<<24) | (((unsigned int) temp[1])<<16) | (((unsigned int) temp[2])<<8) | ((unsigned int) temp[3]));
         fseek(file_data->fptr,size+2,SEEK_CUR);
     }
-    printf("\n Given tag frame not found in this file !!\n\n");
+    printf("\nGiven tag frame not found in this file !!\n");
     return 0;
 }
 
@@ -342,20 +352,59 @@ void edit_tag(File_data *file_data,Tag *tag,char *new_content,char *file_name)
             printf("\nTag content successfully edited !!\n\n");
             return;
         }
-        FILE *fedit=fopen("edit.mp3","w");
-        char *buffer=malloc((tag->frame_pos)+1);
+        FILE *fedit=fopen("edit.mp3","wb");
+        if(fedit==NULL)
+        {
+            perror("\nTemporary file could'nt make :");
+            printf("\n");
+            exit(0);
+        }
+
         fseek(file_data->fptr,0,SEEK_SET);
+        char *buffer=malloc((tag->frame_pos)+1);
+        if(buffer==NULL)
+        {
+            unsigned char ch[100];
+            for(int i=0;i<((tag->frame_pos)+1)/100;i++)
+            {
+                fread(ch,1,100,file_data->fptr);
+                fwrite(ch,1,100,fedit);
+            }
+            fread(ch,1,((tag->frame_pos)+1)%100,file_data->fptr);
+            fwrite(ch,1,((tag->frame_pos)+1)%100,fedit);  
+            goto skip; 
+        }
         fread(buffer,1,(tag->frame_pos)+1,file_data->fptr);
         fwrite(buffer,1,(tag->frame_pos)+1,fedit);
+        skip :
         fwrite(new_content,1,new_tag_size,fedit);
         new_tag_size++;  //to include the encoding byte;
 
         long unsigned int size=((file_data->file_size)-((long)(tag->frame_pos)+(long)(tag->frame_size)));
-        buffer=realloc(buffer,size);
         fseek(file_data->fptr,((tag->frame_pos)+(tag->frame_size)),SEEK_SET);
-        fread(buffer,1,size,file_data->fptr);
-        //fseek(fedit,((tag->frame_pos)+(new_tag_size)),SEEK_SET);
-        fwrite(buffer,1,size,fedit);
+        if(buffer==NULL)
+        {
+            buffer=malloc(size);
+            goto skip3;
+        }
+        buffer=realloc(buffer,size);
+        skip3 :
+        if(buffer==NULL)
+        {
+            unsigned char ch[100];
+            for(int i=0;i<(size)/100;i++)
+            {
+                fread(ch,1,100,file_data->fptr);
+                fwrite(ch,1,100,fedit);
+            }
+            fread(ch,1,(size)%100,file_data->fptr);
+            fwrite(ch,1,(size)%100,fedit);  
+        }
+        else 
+        {
+            fread(buffer,1,size,file_data->fptr);
+            fwrite(buffer,1,size,fedit);
+        }
         long difference = (long)new_tag_size - (long)tag->frame_size;
         (file_data->file_size)=(file_data->file_size)+difference;
 
@@ -404,13 +453,14 @@ void print_help()
     printf("./a.out -h  ->for showing help menu\n");
     printf("./a.out -v filename.mp3  ->for showing file tags data\n");
     printf("./a.out -e filename.mp3 -(alphabet reprecenting each tag from help menu (eg:- t,A...)) \"new content\"  ->for editing tag content\n");
+    printf("Example :- \n    ./a.out -e sample.mp3 -A \"new content for edit\"\n");
     printf("\n");
 
     printf("-h    Displays this help info\n");
     printf("-v    Prints version & tag info\n");
 
     printf("-e    Edit the content of tag\n");
-    printf("You can select the tag that want to edit from bellow and give new content\n");
+    printf("You can select the tag that want to edit like shown bellow and give new content\n");
     printf("   -t    Modifies a Title tag\n");
     printf("   -a    Modifies an Artist tag\n");
     printf("   -A    Modifies an Album tag\n");

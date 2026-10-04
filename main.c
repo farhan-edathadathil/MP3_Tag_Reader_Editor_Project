@@ -11,10 +11,7 @@ int main(int argc,char **argv)
     if(argc==1)
     {
         printf("No enough cammand line arguments are given !!\n\n");
-        printf("Usage :-\n");
-        printf("./a.out -h  ->for showing help menu\n");
-        printf("./a.out -v filename.mp3  ->for showing file tags data\n");
-        printf("./a.out -e filename.mp3 -(alphabet reprecenting each tag from help menu (eg:- t,A...)) \"new content\"  ->for editing tag content\n");
+        print_help();
         exit(0);
     }
     if(strcmp("-h",argv[1])==0)
@@ -76,10 +73,7 @@ int main(int argc,char **argv)
     else
     {
         printf("\nInvalid input !!\n");
-        printf("Usage :-\n");
-        printf("./a.out -h  ->for showing help menu\n");
-        printf("./a.out -v filename.mp3  ->for showing file tags data\n");
-        printf("./a.out -e filename.mp3 -(alphabet reprecenting each tag from help menu (eg:- t,A...)) \"new content\"  ->for editing tag content\n");
+        print_help();
         exit(0);
     }
 
