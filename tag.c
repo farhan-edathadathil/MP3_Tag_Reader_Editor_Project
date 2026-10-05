@@ -175,12 +175,12 @@ void print_tag01(File_data *file_data,Tag *tag)
         int i;
         for(i=5;i<tag->frame_size-1;i++)
         {
-            if(buffer[i]==0xff && buffer[i+1]==0xfe)
+
+            if(buffer[i]==0xfe && buffer[i-1]==0xff)
             {
                 printf("\n\t%14s"," ");
-                i++;
             }
-            else if(buffer[i]!='\0')
+            else if(buffer[i]!='\0' && buffer[i]!=0xff)
                 printf("%c",buffer[i]);
         }
         printf("\n");
@@ -193,7 +193,7 @@ void print_tag01(File_data *file_data,Tag *tag)
         fread(&buffer[i],1,1,file_data->fptr);
         fseek(file_data->fptr,1,SEEK_CUR);
     }
-    buffer[(tag->frame_size)-3]='\0';
+    buffer[(((tag->frame_size)-3)/2)]='\0';
     printf("%s",buffer);
     free(buffer);
 
@@ -336,6 +336,7 @@ void edit_tag(File_data *file_data,Tag *tag,char *new_content,char *file_name)
         while ((ch = getchar()) != '\n' && ch != EOF);
         goto tryagain;
     }
+
     if(strcmp("COMM",tag->tag)==0)
     {
         new_content[3]='\0';
@@ -343,95 +344,108 @@ void edit_tag(File_data *file_data,Tag *tag,char *new_content,char *file_name)
     
     if(confirm=='y')
     {
-        if(tag->frame_size == new_tag_size+1)
+        fseek(file_data->fptr,(tag->frame_pos),SEEK_SET);
+        fread(&ch,1,1,file_data->fptr);
+        if(ch==0x00)
         {
+            if(tag->frame_size == new_tag_size+1)
+            {
+                fclose(file_data->fptr);
+                file_data->fptr=fopen(file_name,"r+");
+                fseek(file_data->fptr,(tag->frame_pos)+1,SEEK_SET);
+                fwrite(new_content,1,new_tag_size,file_data->fptr);
+                printf("\nTag content successfully edited !!\n\n");
+                return;
+            }
+            FILE *fedit=fopen("edit.mp3","wb");
+            if(fedit==NULL)
+            {
+                perror("\nTemporary file could'nt make :");
+                printf("\n");
+                exit(0);
+            }
+
+            fseek(file_data->fptr,0,SEEK_SET);
+            char *buffer=malloc((tag->frame_pos)+1);
+            if(buffer==NULL)
+            {
+                unsigned char ch[100];
+                for(int i=0;i<((tag->frame_pos)+1)/100;i++)
+                {
+                    fread(ch,1,100,file_data->fptr);
+                    fwrite(ch,1,100,fedit);
+                }
+                fread(ch,1,((tag->frame_pos)+1)%100,file_data->fptr);
+                fwrite(ch,1,((tag->frame_pos)+1)%100,fedit);  
+                goto skip; 
+            }
+            fread(buffer,1,(tag->frame_pos)+1,file_data->fptr);
+            fwrite(buffer,1,(tag->frame_pos)+1,fedit);
+            skip :
+            fwrite(new_content,1,new_tag_size,fedit);
+            new_tag_size++;  //to include the encoding byte;
+
+            long unsigned int size=((file_data->file_size)-((long)(tag->frame_pos)+(long)(tag->frame_size)));
+            fseek(file_data->fptr,((tag->frame_pos)+(tag->frame_size)),SEEK_SET);
+            if(buffer==NULL)
+            {
+                buffer=malloc(size);
+                goto skip3;
+            }
+            buffer=realloc(buffer,size);
+            skip3 :
+            if(buffer==NULL)
+            {
+                unsigned char ch[100];
+                for(int i=0;i<(size)/100;i++)
+                {
+                    fread(ch,1,100,file_data->fptr);
+                    fwrite(ch,1,100,fedit);
+                }
+                fread(ch,1,(size)%100,file_data->fptr);
+                fwrite(ch,1,(size)%100,fedit);  
+            }
+            else 
+            {
+                fread(buffer,1,size,file_data->fptr);
+                fwrite(buffer,1,size,fedit);
+            }
+            long difference = (long)new_tag_size - (long)tag->frame_size;
+            (file_data->file_size)=(file_data->file_size)+difference;
+
+            unsigned char size_bytes[4];
+            size_bytes[0] = (new_tag_size >> 24) & 0xFF;
+            size_bytes[1] = (new_tag_size >> 16) & 0xFF;
+            size_bytes[2] = (new_tag_size >> 8)  & 0xFF;
+            size_bytes[3] = new_tag_size & 0xFF;
+
+            fseek(fedit,(tag->frame_pos)-6,SEEK_SET);
+            fwrite(size_bytes,1,4,fedit);
+
+            (file_data->header_size)+=(int)difference;
+
+            size_bytes[0] = (((file_data->header_size)-10) >> 21) & 0x7F;
+            size_bytes[1] = (((file_data->header_size)-10) >> 14) & 0x7F;
+            size_bytes[2] = (((file_data->header_size)-10) >> 7)  & 0x7F;
+            size_bytes[3] = ((file_data->header_size)-10) & 0x7F;
+
+            fseek(fedit,6,SEEK_SET);
+            fwrite(size_bytes,1,4,fedit);
+            free(buffer);
             fclose(file_data->fptr);
-            file_data->fptr=fopen(file_name,"r+");
-            fseek(file_data->fptr,(tag->frame_pos)+1,SEEK_SET);
-            fwrite(new_content,1,new_tag_size,file_data->fptr);
+            fclose(fedit);
+            remove(file_name);
+            rename("edit.mp3",file_name);
             printf("\nTag content successfully edited !!\n\n");
-            return;
         }
-        FILE *fedit=fopen("edit.mp3","wb");
-        if(fedit==NULL)
+        else if(ch==0x01)
         {
-            perror("\nTemporary file could'nt make :");
-            printf("\n");
-            exit(0);
+            edit_tag01(file_data,tag,new_content,file_name);
         }
-
-        fseek(file_data->fptr,0,SEEK_SET);
-        char *buffer=malloc((tag->frame_pos)+1);
-        if(buffer==NULL)
+        else
         {
-            unsigned char ch[100];
-            for(int i=0;i<((tag->frame_pos)+1)/100;i++)
-            {
-                fread(ch,1,100,file_data->fptr);
-                fwrite(ch,1,100,fedit);
-            }
-            fread(ch,1,((tag->frame_pos)+1)%100,file_data->fptr);
-            fwrite(ch,1,((tag->frame_pos)+1)%100,fedit);  
-            goto skip; 
+            printf("Unsupported encoding bit !!");
         }
-        fread(buffer,1,(tag->frame_pos)+1,file_data->fptr);
-        fwrite(buffer,1,(tag->frame_pos)+1,fedit);
-        skip :
-        fwrite(new_content,1,new_tag_size,fedit);
-        new_tag_size++;  //to include the encoding byte;
-
-        long unsigned int size=((file_data->file_size)-((long)(tag->frame_pos)+(long)(tag->frame_size)));
-        fseek(file_data->fptr,((tag->frame_pos)+(tag->frame_size)),SEEK_SET);
-        if(buffer==NULL)
-        {
-            buffer=malloc(size);
-            goto skip3;
-        }
-        buffer=realloc(buffer,size);
-        skip3 :
-        if(buffer==NULL)
-        {
-            unsigned char ch[100];
-            for(int i=0;i<(size)/100;i++)
-            {
-                fread(ch,1,100,file_data->fptr);
-                fwrite(ch,1,100,fedit);
-            }
-            fread(ch,1,(size)%100,file_data->fptr);
-            fwrite(ch,1,(size)%100,fedit);  
-        }
-        else 
-        {
-            fread(buffer,1,size,file_data->fptr);
-            fwrite(buffer,1,size,fedit);
-        }
-        long difference = (long)new_tag_size - (long)tag->frame_size;
-        (file_data->file_size)=(file_data->file_size)+difference;
-
-        unsigned char size_bytes[4];
-        size_bytes[0] = (new_tag_size >> 24) & 0xFF;
-        size_bytes[1] = (new_tag_size >> 16) & 0xFF;
-        size_bytes[2] = (new_tag_size >> 8)  & 0xFF;
-        size_bytes[3] = new_tag_size & 0xFF;
-
-        fseek(fedit,(tag->frame_pos)-6,SEEK_SET);
-        fwrite(size_bytes,1,4,fedit);
-
-        (file_data->header_size)+=(int)difference;
-
-        size_bytes[0] = (file_data->header_size >> 21) & 0x7F;
-        size_bytes[1] = (file_data->header_size >> 14) & 0x7F;
-        size_bytes[2] = (file_data->header_size >> 7)  & 0x7F;
-        size_bytes[3] = file_data->header_size & 0x7F;
-
-        fseek(fedit,6,SEEK_SET);
-        fwrite(size_bytes,1,4,fedit);
-        free(buffer);
-        fclose(file_data->fptr);
-        fclose(fedit);
-        remove(file_name);
-        rename("edit.mp3",file_name);
-        printf("\nTag content successfully edited !!\n\n");
     }
     else if(confirm=='n')
     {
@@ -444,6 +458,150 @@ void edit_tag(File_data *file_data,Tag *tag,char *new_content,char *file_name)
         goto tryagain;
     }
   
+}
+
+void edit_tag01(File_data *file_data,Tag *tag,char *new_content,char *file_name)
+{
+    unsigned int new_tag_size=strlen(new_content)+1;
+    int n=0;
+    if((tag->frame_size == (new_tag_size*2)+3) && strcmp(tag->tag,"COMM")!=0)
+    {
+        fclose(file_data->fptr);
+        file_data->fptr=fopen(file_name,"rb+");
+        fseek(file_data->fptr,(tag->frame_pos)+3,SEEK_SET);
+        for(int i=0;i<new_tag_size;i++)
+        {
+            fwrite(&new_content[i],1,1,file_data->fptr);
+            fseek(file_data->fptr,1,SEEK_CUR);
+        }
+
+        printf("\nTag content successfully edited !!\n\n");
+        return;
+    }
+
+
+    FILE *fedit=fopen("edit.mp3","wb");
+    if(fedit==NULL)
+    {
+        perror("\nTemporary file could'nt make :");
+        printf("\n");
+        exit(0);
+    }
+
+    fseek(file_data->fptr,0,SEEK_SET);
+    char *buffer=malloc((tag->frame_pos)+3);
+    if(buffer==NULL)
+    {
+        unsigned char ch[100];
+        for(int i=0;i<((tag->frame_pos)+3)/100;i++)
+        {
+            fread(ch,1,100,file_data->fptr);
+            fwrite(ch,1,100,fedit);
+        }
+        fread(ch,1,((tag->frame_pos)+3)%100,file_data->fptr);
+        fwrite(ch,1,((tag->frame_pos)+3)%100,fedit);  
+        goto skip; 
+    }
+    fread(buffer,1,(tag->frame_pos)+3,file_data->fptr);
+    fwrite(buffer,1,(tag->frame_pos)+3,fedit);
+    skip :
+    if(strcmp(tag->tag,"COMM")==0)
+    {
+        new_content[3]=' ';
+        new_tag_size=strlen(new_content)+1;
+        unsigned char bom[] = {0xFF, 0xFE};
+        fseek(fedit,(tag->frame_pos)+1,SEEK_SET);
+        fwrite(new_content,1,3,fedit);
+        fwrite(bom,1,2,fedit);
+        int count=0,flag=1;
+        for(int i=4;i<new_tag_size;i++)
+        {
+            if(new_content[i]==' ')
+            {
+                if(flag==0)
+                {
+                    new_content[i]='\0';
+                    fwrite(&new_content[i],1,1,fedit);
+                    fwrite(&n,1,1,fedit);
+                    break;
+                }
+                fwrite(bom,1,2,fedit);
+                flag=0;
+                continue;
+            }
+            fwrite(&new_content[i],1,1,fedit);
+            fwrite(&n,1,1,fedit);
+        }
+        if(flag==1)
+        {
+            fwrite(bom,1,2,fedit);
+            fwrite(&n,1,1,fedit);
+            fwrite(&n,1,1,fedit);
+        }
+        new_tag_size=strlen(new_content)+1;
+        new_tag_size=((new_tag_size-4)*2)+8+flag*2-(!flag)*2;
+        goto comm;
+    }
+    for(int i=0;i<new_tag_size;i++)
+    {
+        fwrite(&new_content[i],1,1,fedit);
+        fwrite(&n,1,1,fedit);
+    }
+    new_tag_size=(new_tag_size*2)+3;  //to include the encoding byte and fffe BOM bytes ;
+    comm:
+    fseek(file_data->fptr,((tag->frame_pos)+(tag->frame_size)),SEEK_SET);
+    long unsigned int size=((file_data->file_size)-((long)(tag->frame_pos)+(long)(tag->frame_size)));
+    if(buffer==NULL)
+    {
+        buffer=malloc(size);
+        goto skip3;
+    }
+    buffer=realloc(buffer,size);
+    skip3 :
+    if(buffer==NULL)
+    {
+        unsigned char ch[100];
+        for(int i=0;i<(size)/100;i++)
+        {
+            fread(ch,1,100,file_data->fptr);
+            fwrite(ch,1,100,fedit);
+        }
+        fread(ch,1,(size)%100,file_data->fptr);
+        fwrite(ch,1,(size)%100,fedit);  
+    }
+    else 
+    {
+        fread(buffer,1,size,file_data->fptr);
+        fwrite(buffer,1,size,fedit);
+    }
+    long difference = (long)new_tag_size - (long)tag->frame_size;
+    (file_data->file_size)=(file_data->file_size)+difference;
+
+    unsigned char size_bytes[4];
+    size_bytes[0] = (new_tag_size >> 24) & 0xFF;
+    size_bytes[1] = (new_tag_size >> 16) & 0xFF;
+    size_bytes[2] = (new_tag_size >> 8)  & 0xFF;
+    size_bytes[3] = new_tag_size & 0xFF;
+
+    fseek(fedit,(tag->frame_pos)-6,SEEK_SET);
+    fwrite(size_bytes,1,4,fedit);
+
+    (file_data->header_size)+=(int)difference;
+
+    size_bytes[0] = (((file_data->header_size)-10) >> 21) & 0x7F;
+    size_bytes[1] = (((file_data->header_size)-10) >> 14) & 0x7F;
+    size_bytes[2] = (((file_data->header_size)-10) >> 7)  & 0x7F;
+    size_bytes[3] = ((file_data->header_size)-10) & 0x7F;
+
+    fseek(fedit,6,SEEK_SET);
+    fwrite(size_bytes,1,4,fedit);
+    free(buffer);
+    fclose(file_data->fptr);
+    fclose(fedit);
+    remove(file_name);
+    rename("edit.mp3",file_name);
+    printf("\nTag content successfully edited !!\n\n");
+
 }
 
 void print_help()
