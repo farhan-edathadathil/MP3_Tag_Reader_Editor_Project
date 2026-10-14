@@ -93,4 +93,111 @@ This allows metadata to be increased or decreased in size while maintaining the 
 Different metadata fields have different validation rules.
 
 - **Title, Artist, Album and Genre**
- 
+  - Must not be empty or contain only spaces.
+
+- **Year**
+  - Must contain exactly four digits and begin with 1 or 2.
+
+- **Comment**
+  - Must contain a three-character alphabetic language code followed by a space and the description/comment.
+
+## COMMAND-LINE USAGE:
+
+**Display help:**
+
+```bash
+./a.out -h
+```
+
+**Display MP3 metadata:**
+
+```bash
+./a.out -v filename.mp3
+```
+
+**Edit title:**
+
+```bash
+./a.out -e filename.mp3 -t "New Title"
+```
+
+**Edit artist:**
+
+```bash
+./a.out -e filename.mp3 -a "New Artist"
+```
+
+**Edit album:**
+
+```bash
+./a.out -e filename.mp3 -A "New Album"
+```
+
+**Edit year:**
+
+```bash
+./a.out -e filename.mp3 -y "2026"
+```
+
+**Edit comment:**
+
+```bash
+./a.out -e filename.mp3 -c "ENG New description"
+```
+
+**Edit genre:**
+
+```bash
+./a.out -e filename.mp3 -g "Rock"
+```
+
+## MAIN C CONCEPTS USED:
+
+This project demonstrates practical usage of several C programming concepts, including:
+
+- Command-line arguments (`argc` and `argv`)
+- Structures and `typedef`
+- Pointers and structure pointers
+- Binary file handling
+- `fopen()`, `fclose()`, `fread()`, `fwrite()`
+- `fseek()`, `ftell()` and `rewind()`
+- Dynamic memory allocation
+- `malloc()`, `realloc()` and `free()`
+- String handling functions
+- Character validation functions
+- Bitwise shift and OR operations
+- File position management
+- Error handling
+- Input validation
+
+## SAMPLE INPUT:
+
+```bash
+./a.out -v sample.mp3
+```
+
+## SAMPLE OUTPUT:
+
+```text
+sample.mp3 -[8.520077 MB]
+-----------------------------------------------------------------------
+File Format :- ID3 v2.3                                     Year : 2013
+-----------------------------------------------------------------------
+Title       : Sunny Sunny - Yo Yo Honey Singh - [SongsPk.CC]
+Artist      : Yo Yo Honey Singh - [SongsPk.CC]
+Album       : Yariyaan
+Genre       : Bollywood Music - [SongsPk.CC]
+Comment     :-
+        Language    : Eng
+        Description : downloaded_from spotify_india
+
+-----------------------------------------------------------------------
+```
+
+## OVERALL:
+
+The main purpose of this project is to understand how metadata is internally stored inside an MP3 file and how it can be accessed and modified directly using C.
+
+The project provides a practical implementation of ID3 v2.3 frame parsing, metadata extraction, encoding-based data processing, dynamic memory management and variable-size frame editing without depending on an external MP3 metadata library.
+
+---
